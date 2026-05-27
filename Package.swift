@@ -7,7 +7,15 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "SteamControllerBridge",
-            path: "Sources/SteamControllerBridge"
+            path: "Sources/SteamControllerBridge",
+            swiftSettings: [
+                .unsafeFlags(["-I", "Sources/CSDL3/include"]),
+                .unsafeFlags(["-I/opt/homebrew/include"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-L/opt/homebrew/lib"]),
+                .linkedLibrary("SDL3")
+            ]
         )
     ]
 )

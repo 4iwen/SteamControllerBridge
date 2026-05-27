@@ -3,16 +3,17 @@ import IOKit
 import IOKit.hid
 
 final class PuckDetectorService {
-    var onStateChange: ((PuckState) -> Void)?
+    var onStateChange: (([PuckState]) -> Void)?
 
     private let valveVendorID = 0x28de
     private let primaryProductIDs: Set<Int> = [0x1304, 0x1305]
     private let legacyProductIDs: Set<Int> = [0x1142]
 
     private var manager: IOHIDManager?
-    private var state = PuckState.notDetected
-    private var records: [DeviceKey: DeviceRecord] = [:]
+    private var states: [DeviceKey: PuckState] = [:]
+    private var interfaceCounts: [DeviceKey: Int] = [:]
     private var interfaceKeys: [UInt: DeviceKey] = [:]
+    private var publishedStates: [PuckState] = []
 
     deinit {
         if let manager {
@@ -30,12 +31,12 @@ final class PuckDetectorService {
         IOHIDManagerSetDeviceMatchingMultiple(hidManager, matchingDictionaries() as CFArray)
 
         let context = Unmanaged.passUnretained(self).toOpaque()
-        IOHIDManagerRegisterDeviceMatchingCallback(hidManager, deviceAddedCallback, context)
-        IOHIDManagerRegisterDeviceRemovalCallback(hidManager, deviceRemovedCallback, context)
+        IOHIDManagerRegisterDeviceMatchingCallback(hidManager, puckDeviceAddedCallback, context)
+        IOHIDManagerRegisterDeviceRemovalCallback(hidManager, puckDeviceRemovedCallback, context)
         IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         IOHIDManagerOpen(hidManager, IOOptionBits(kIOHIDOptionsTypeNone))
 
-        updateState()
+        publishIfChanged()
     }
 
     private func matchingDictionaries() -> [[String: Int]] {
@@ -57,61 +58,58 @@ final class PuckDetectorService {
         let deviceKey = dedupeKey(for: device, productID: productID)
         interfaceKeys[pointerKey] = deviceKey
 
-        if var record = records[deviceKey] {
-            record.interfaceCount += 1
-            records[deviceKey] = record
-        } else {
-            records[deviceKey] = DeviceRecord(
-                state: PuckState(
-                    is_present: true,
-                    vendor_id: intProperty(device, key: kIOHIDVendorIDKey),
-                    product_id: productID,
-                    product_name: stringProperty(device, key: kIOHIDProductKey),
-                    manufacturer: stringProperty(device, key: kIOHIDManufacturerKey),
-                    transport: stringProperty(device, key: kIOHIDTransportKey),
-                    location_id: intProperty(device, key: kIOHIDLocationIDKey),
-                    is_legacy: legacyProductIDs.contains(productID)
-                ),
-                interfaceCount: 1
+        interfaceCounts[deviceKey, default: 0] += 1
+        if states[deviceKey] == nil {
+            states[deviceKey] = PuckState(
+                device_id: deviceKey.title,
+                is_present: true,
+                vendor_id: intProperty(device, key: kIOHIDVendorIDKey),
+                product_id: productID,
+                product_name: stringProperty(device, key: kIOHIDProductKey),
+                manufacturer: stringProperty(device, key: kIOHIDManufacturerKey),
+                transport: stringProperty(device, key: kIOHIDTransportKey),
+                location_id: intProperty(device, key: kIOHIDLocationIDKey),
+                is_legacy: legacyProductIDs.contains(productID)
             )
         }
 
-        updateState()
+        publishIfChanged()
     }
 
     fileprivate func remove(device: IOHIDDevice) {
         let pointerKey = pointerKey(for: device)
-        guard let deviceKey = interfaceKeys.removeValue(forKey: pointerKey),
-              var record = records[deviceKey] else {
+        guard let deviceKey = interfaceKeys.removeValue(forKey: pointerKey) else {
             return
         }
 
-        record.interfaceCount -= 1
-        if record.interfaceCount > 0 {
-            records[deviceKey] = record
+        let nextCount = max((interfaceCounts[deviceKey] ?? 1) - 1, 0)
+        if nextCount > 0 {
+            interfaceCounts[deviceKey] = nextCount
         } else {
-            records.removeValue(forKey: deviceKey)
+            interfaceCounts.removeValue(forKey: deviceKey)
+            states.removeValue(forKey: deviceKey)
         }
 
-        updateState()
+        publishIfChanged()
     }
 
-    private func updateState() {
-        let nextState = records.values
-            .sorted { left, right in
-                if left.state.is_legacy != right.state.is_legacy {
-                    return !left.state.is_legacy
-                }
-
-                return (left.state.product_id ?? 0) < (right.state.product_id ?? 0)
+    private func publishIfChanged() {
+        let nextStates = states.values.sorted { left, right in
+            if left.is_legacy != right.is_legacy {
+                return !left.is_legacy
             }
-            .first?
-            .state ?? .notDetected
 
-        guard nextState != state else { return }
-        state = nextState
-        DispatchQueue.main.async { [state, onStateChange] in
-            onStateChange?(state)
+            if left.product_id != right.product_id {
+                return (left.product_id ?? 0) < (right.product_id ?? 0)
+            }
+
+            return left.device_id < right.device_id
+        }
+
+        guard nextStates != publishedStates else { return }
+        publishedStates = nextStates
+        DispatchQueue.main.async { [publishedStates, onStateChange] in
+            onStateChange?(publishedStates)
         }
     }
 
@@ -162,7 +160,7 @@ final class PuckDetectorService {
     }
 }
 
-private let deviceAddedCallback: IOHIDDeviceCallback = { context, _, _, device in
+private let puckDeviceAddedCallback: IOHIDDeviceCallback = { context, _, _, device in
     guard let context else { return }
     Unmanaged<PuckDetectorService>
         .fromOpaque(context)
@@ -170,7 +168,7 @@ private let deviceAddedCallback: IOHIDDeviceCallback = { context, _, _, device i
         .add(device: device)
 }
 
-private let deviceRemovedCallback: IOHIDDeviceCallback = { context, _, _, device in
+private let puckDeviceRemovedCallback: IOHIDDeviceCallback = { context, _, _, device in
     guard let context else { return }
     Unmanaged<PuckDetectorService>
         .fromOpaque(context)
@@ -179,7 +177,7 @@ private let deviceRemovedCallback: IOHIDDeviceCallback = { context, _, _, device
 }
 
 private struct DeviceKey: Hashable {
-    enum Kind: Hashable {
+    enum Kind: String, Hashable {
         case locationID
         case registryEntryID
         case interfacePointer
@@ -188,9 +186,8 @@ private struct DeviceKey: Hashable {
     let productID: Int
     let value: UInt64
     let kind: Kind
-}
 
-private struct DeviceRecord {
-    var state: PuckState
-    var interfaceCount: Int
+    var title: String {
+        "\(kind.rawValue)-\(String(format: "%04x", productID))-\(String(format: "%llx", value))"
+    }
 }

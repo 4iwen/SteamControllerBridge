@@ -1,4 +1,5 @@
 struct PuckState: Equatable {
+    var device_id: String
     var is_present: Bool
     var vendor_id: Int?
     var product_id: Int?
@@ -9,6 +10,7 @@ struct PuckState: Equatable {
     var is_legacy: Bool
 
     static let notDetected = PuckState(
+        device_id: "none",
         is_present: false,
         vendor_id: nil,
         product_id: nil,

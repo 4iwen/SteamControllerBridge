@@ -2,7 +2,6 @@ import AppKit
 
 final class DiagnosticsWindowController: NSWindowController {
     private let devicesView = NSTextView()
-    private let infoView = NSTextView()
     private let inputView = NSTextView()
 
     init() {
@@ -17,17 +16,16 @@ final class DiagnosticsWindowController: NSWindowController {
 
         super.init(window: window)
         window.contentView = makeContentView()
-        update(puckState: .notDetected, controllerState: .notConnected)
+        update(puckStates: [], controllerState: .notConnected)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func update(puckState: PuckState, controllerState: ControllerConnectionState) {
-        devicesView.string = devicesText(puckState: puckState, controllerState: controllerState)
-        infoView.string = infoText(puckState: puckState, controllerState: controllerState)
-        inputView.string = "Input: not captured"
+    func update(puckStates: [PuckState], controllerState: ControllerConnectionState) {
+        devicesView.string = devicesText(puckStates: puckStates, controllerState: controllerState)
+        inputView.string = inputText(controllerState: controllerState)
     }
 
     private func makeContentView() -> NSView {
@@ -35,7 +33,6 @@ final class DiagnosticsWindowController: NSWindowController {
         tabView.translatesAutoresizingMaskIntoConstraints = false
 
         tabView.addTabViewItem(tab(title: "Devices", view: scrollView(for: devicesView)))
-        tabView.addTabViewItem(tab(title: "Info", view: scrollView(for: infoView)))
         tabView.addTabViewItem(tab(title: "Input", view: scrollView(for: inputView)))
 
         let container = NSView()
@@ -70,49 +67,61 @@ final class DiagnosticsWindowController: NSWindowController {
         return scrollView
     }
 
-    private func devicesText(puckState: PuckState, controllerState: ControllerConnectionState) -> String {
+    private func devicesText(puckStates: [PuckState], controllerState: ControllerConnectionState) -> String {
         var lines: [String] = []
 
-        if puckState.is_present {
-            lines.append("Puck")
-            lines.append("  Name: \(puckState.product_name ?? "Steam Controller puck")")
-            lines.append("  PID: \(productIDTitle(for: puckState))")
-            lines.append("  Transport: \(puckState.transport ?? "unknown")")
+        lines.append("Pucks")
+        if puckStates.isEmpty {
+            lines.append("  not detected")
         } else {
-            lines.append("Puck: not detected")
+            for (index, puck) in puckStates.enumerated() {
+                lines.append("  \(index + 1). \(puck.product_name ?? "Steam Controller puck")")
+                lines.append("     PID: \(productIDTitle(for: puck))")
+                lines.append("     Transport: \(puck.transport ?? "unknown")")
+                lines.append("     Location: \(hexTitle(puck.location_id, width: 8))")
+            }
         }
 
         lines.append("")
-
-        if controllerState.controller_is_connected {
-            lines.append("Controller")
-            lines.append("  Name: \(controllerState.controller_name ?? "connected")")
-            lines.append("  Path/id: \(controllerState.controller_path_or_id ?? "unknown")")
+        lines.append("Controllers")
+        if controllerState.devices.isEmpty {
+            lines.append("  not active")
         } else {
-            lines.append("Controller: not connected")
+            for (index, controller) in controllerState.devices.enumerated() {
+                lines.append("  \(index + 1). \(controller.name)")
+                lines.append("     State: \(controller.is_connected ? "active" : "idle")")
+                lines.append("     ID: \(controller.device_id)")
+            }
         }
 
         return lines.joined(separator: "\n")
     }
 
-    private func infoText(puckState: PuckState, controllerState: ControllerConnectionState) -> String {
-        """
-        Puck
-          Present: \(yesNo(puckState.is_present))
-          Vendor ID: \(hexTitle(puckState.vendor_id, width: 4))
-          Product ID: \(productIDTitle(for: puckState))
-          Product name: \(puckState.product_name ?? "unknown")
-          Manufacturer: \(puckState.manufacturer ?? "unknown")
-          Transport: \(puckState.transport ?? "unknown")
-          Location ID: \(hexTitle(puckState.location_id, width: 8))
-          Legacy: \(yesNo(puckState.is_legacy))
+    private func inputText(controllerState: ControllerConnectionState) -> String {
+        guard !controllerState.devices.isEmpty else {
+            return "Controller: not active"
+        }
 
-        Controller
-          Connected: \(yesNo(controllerState.controller_is_connected))
-          Name: \(controllerState.controller_name ?? "unknown")
-          Path/id: \(controllerState.controller_path_or_id ?? "unknown")
-          SDL gamepads: \(controllerState.sdl_gamepad_count)
-        """
+        var lines: [String] = []
+        for (index, controller) in controllerState.devices.enumerated() {
+            if index > 0 {
+                lines.append("")
+            }
+
+            lines.append("\(controller.name) (\(controller.is_connected ? "active" : "idle"))")
+            lines.append("Axes")
+            for key in controller.input_state.axes.keys.sorted() {
+                lines.append("  \(key): \(controller.input_state.axes[key] ?? 0)")
+            }
+
+            lines.append("")
+            lines.append("Buttons")
+            for key in controller.input_state.buttons.keys.sorted() {
+                lines.append("  \(key): \(pressedTitle(controller.input_state.buttons[key] ?? false))")
+            }
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     private func productIDTitle(for state: PuckState) -> String {
@@ -131,8 +140,8 @@ final class DiagnosticsWindowController: NSWindowController {
         return String(format: "0x%0\(width)x", value)
     }
 
-    private func yesNo(_ value: Bool) -> String {
-        value ? "yes" : "no"
+    private func pressedTitle(_ value: Bool) -> String {
+        value ? "down" : "-"
     }
 }
 

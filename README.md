@@ -6,7 +6,6 @@ MacOS menubar app for Steam Controller wine bridge.
 
 - macOS 13+
 - Xcode Command Line Tools
-- SDL3: `brew install sdl3`
 
 ## Run
 
@@ -20,7 +19,8 @@ Select the `SteamControllerBridge` scheme and run it. This builds a real menu-ba
 In the target settings, set **Signing & Capabilities > Team** to your Apple
 Development team if Input Monitoring keeps resetting between builds.
 
-If SDL needs HID access, grant Input Monitoring to the built app once.
+Grant Input Monitoring to the built app once so it can read Steam Controller
+HID input for diagnostics.
 
 Raw SwiftPM builds still work, but macOS may ask for permissions again:
 

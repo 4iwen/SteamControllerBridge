@@ -17,7 +17,7 @@ final class PuckDetectorService {
 
     deinit {
         if let manager {
-            IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+            IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
             IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         }
     }
@@ -33,9 +33,10 @@ final class PuckDetectorService {
         let context = Unmanaged.passUnretained(self).toOpaque()
         IOHIDManagerRegisterDeviceMatchingCallback(hidManager, puckDeviceAddedCallback, context)
         IOHIDManagerRegisterDeviceRemovalCallback(hidManager, puckDeviceRemovedCallback, context)
-        IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+        IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
         IOHIDManagerOpen(hidManager, IOOptionBits(kIOHIDOptionsTypeNone))
 
+        addExistingDevices(from: hidManager)
         publishIfChanged()
     }
 
@@ -55,6 +56,10 @@ final class PuckDetectorService {
         }
 
         let pointerKey = pointerKey(for: device)
+        guard interfaceKeys[pointerKey] == nil else {
+            return
+        }
+
         let deviceKey = dedupeKey(for: device, productID: productID)
         interfaceKeys[pointerKey] = deviceKey
 
@@ -74,6 +79,14 @@ final class PuckDetectorService {
         }
 
         publishIfChanged()
+    }
+
+    private func addExistingDevices(from hidManager: IOHIDManager) {
+        guard let deviceSet = IOHIDManagerCopyDevices(hidManager) else { return }
+
+        for case let device as IOHIDDevice in deviceSet as Set<NSObject> {
+            add(device: device)
+        }
     }
 
     fileprivate func remove(device: IOHIDDevice) {

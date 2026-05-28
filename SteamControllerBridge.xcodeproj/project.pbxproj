@@ -1,0 +1,399 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000101 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000001 /* main.swift */; };
+		000000000000000000000102 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* AppDelegate.swift */; };
+		000000000000000000000103 /* PuckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* PuckState.swift */; };
+		000000000000000000000104 /* PuckDetectorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000004 /* PuckDetectorService.swift */; };
+		000000000000000000000105 /* ControllerConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000005 /* ControllerConnectionState.swift */; };
+		000000000000000000000106 /* ControllerConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000006 /* ControllerConnectionService.swift */; };
+		000000000000000000000107 /* DiagnosticsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000A /* DiagnosticsWindowController.swift */; };
+		000000000000000000000108 /* ControllerInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000B /* ControllerInputState.swift */; };
+		000000000000000000000109 /* DiagnosticsTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000C /* DiagnosticsTextFormatter.swift */; };
+		00000000000000000000010B /* StatusMenuFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E /* StatusMenuFormatter.swift */; };
+		803E08432FC78701009D50B6 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 803E08422FC78701009D50B6 /* AppIcon.icon */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		000000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		000000000000000000000003 /* PuckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuckState.swift; sourceTree = "<group>"; };
+		000000000000000000000004 /* PuckDetectorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuckDetectorService.swift; sourceTree = "<group>"; };
+		000000000000000000000005 /* ControllerConnectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerConnectionState.swift; sourceTree = "<group>"; };
+		000000000000000000000006 /* ControllerConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerConnectionService.swift; sourceTree = "<group>"; };
+		000000000000000000000009 /* SteamControllerBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SteamControllerBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00000000000000000000000A /* DiagnosticsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsWindowController.swift; sourceTree = "<group>"; };
+		00000000000000000000000B /* ControllerInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerInputState.swift; sourceTree = "<group>"; };
+		00000000000000000000000C /* DiagnosticsTextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsTextFormatter.swift; sourceTree = "<group>"; };
+		00000000000000000000000E /* StatusMenuFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuFormatter.swift; sourceTree = "<group>"; };
+		803E08422FC78701009D50B6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000201 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000301 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000302 /* Sources */,
+				000000000000000000000303 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000302 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000304 /* SteamControllerBridge */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		000000000000000000000303 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000009 /* SteamControllerBridge.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000304 /* SteamControllerBridge */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000305 /* App */,
+				000000000000000000000306 /* Models */,
+				000000000000000000000307 /* Services */,
+				000000000000000000000308 /* UI */,
+				803E08422FC78701009D50B6 /* AppIcon.icon */,
+			);
+			path = SteamControllerBridge;
+			sourceTree = "<group>";
+		};
+		000000000000000000000305 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000001 /* main.swift */,
+				000000000000000000000002 /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		000000000000000000000306 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000003 /* PuckState.swift */,
+				000000000000000000000005 /* ControllerConnectionState.swift */,
+				00000000000000000000000B /* ControllerInputState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		000000000000000000000307 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000004 /* PuckDetectorService.swift */,
+				000000000000000000000006 /* ControllerConnectionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		000000000000000000000308 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000A /* DiagnosticsWindowController.swift */,
+				00000000000000000000000C /* DiagnosticsTextFormatter.swift */,
+				00000000000000000000000E /* StatusMenuFormatter.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000401 /* SteamControllerBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000701 /* Build configuration list for PBXNativeTarget "SteamControllerBridge" */;
+			buildPhases = (
+				000000000000000000000501 /* Sources */,
+				000000000000000000000201 /* Frameworks */,
+				000000000000000000000502 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SteamControllerBridge;
+			productName = SteamControllerBridge;
+			productReference = 000000000000000000000009 /* SteamControllerBridge.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000601 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					000000000000000000000401 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000702 /* Build configuration list for PBXProject "SteamControllerBridge" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 000000000000000000000301;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 000000000000000000000303 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000401 /* SteamControllerBridge */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000502 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				803E08432FC78701009D50B6 /* AppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000501 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000101 /* main.swift in Sources */,
+				000000000000000000000102 /* AppDelegate.swift in Sources */,
+				000000000000000000000103 /* PuckState.swift in Sources */,
+				000000000000000000000104 /* PuckDetectorService.swift in Sources */,
+				000000000000000000000105 /* ControllerConnectionState.swift in Sources */,
+				000000000000000000000106 /* ControllerConnectionService.swift in Sources */,
+				000000000000000000000107 /* DiagnosticsWindowController.swift in Sources */,
+				000000000000000000000108 /* ControllerInputState.swift in Sources */,
+				000000000000000000000109 /* DiagnosticsTextFormatter.swift in Sources */,
+				00000000000000000000010B /* StatusMenuFormatter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000801 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		000000000000000000000802 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		000000000000000000000901 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4359KXSC2X;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "Steam Controller Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSInputMonitoringUsageDescription = "Steam Controller Bridge reads Steam Controller HID input for diagnostics.";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aiwen.SteamControllerBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		000000000000000000000902 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4359KXSC2X;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_CFBundleDisplayName = "Steam Controller Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHighResolutionCapable = YES;
+				INFOPLIST_KEY_NSInputMonitoringUsageDescription = "Steam Controller Bridge reads Steam Controller HID input for diagnostics.";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.aiwen.SteamControllerBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000701 /* Build configuration list for PBXNativeTarget "SteamControllerBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000901 /* Debug */,
+				000000000000000000000902 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000702 /* Build configuration list for PBXProject "SteamControllerBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000801 /* Debug */,
+				000000000000000000000802 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 000000000000000000000601 /* Project object */;
+}

@@ -1,9 +1,4 @@
-# Swift Package Manager
-.build/
-*.resolved
-
 # Xcode
-*.xcodeproj/
 *.xcworkspace/
 xcuserdata/
 DerivedData/
@@ -19,6 +14,3 @@ DerivedData/
 .AppleDouble
 .LSOverride
 *.icloud
-
-# Editor
-.swiftpm/

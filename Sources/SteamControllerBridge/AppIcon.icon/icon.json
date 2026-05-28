@@ -1,0 +1,29 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:1.00000,0.53342,0.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "gamecontroller.fill@5x 3.png",
+          "name" : "gamecontroller.fill@5x 3"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

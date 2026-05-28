@@ -11,7 +11,7 @@ MacOS menubar app for Steam Controller wine bridge.
 
 ### Xcode
 
-Open `SteamControllerBridge.xcodeproj`, not `Package.swift`.
+Open `SteamControllerBridge.xcodeproj`.
 
 Select the `SteamControllerBridge` scheme and run it. This builds a real menu-bar
 `.app` with bundle id `dev.aiwen.SteamControllerBridge`.
@@ -21,10 +21,3 @@ Development team if Input Monitoring keeps resetting between builds.
 
 Grant Input Monitoring to the built app once so it can read Steam Controller
 HID input for diagnostics.
-
-Raw SwiftPM builds still work, but macOS may ask for permissions again:
-
-```bash
-swift build
-swift run
-```

@@ -1,14 +1,14 @@
 import AppKit
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var statusItem: NSStatusItem?
     private let puckDetectorService = PuckDetectorService()
     private let controllerConnectionService = ControllerConnectionService()
+    private let statusMenuFormatter = StatusMenuFormatter()
     private var puckStates: [PuckState] = []
     private var controllerState = ControllerConnectionState.notConnected
     private let diagnosticsWindowController = DiagnosticsWindowController()
-    private let settingsWindowController = SettingsWindowController()
 
     private let statusMenuItem = NSMenuItem(title: "Status: No puck detected", action: nil, keyEquivalent: "")
     private var currentStatusIconName: String?
@@ -32,6 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.delegate = self
 
         statusMenuItem.isEnabled = false
         menu.addItem(statusMenuItem)
@@ -40,9 +41,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(
             NSMenuItem(title: "Diagnostics", action: #selector(showDiagnostics), keyEquivalent: "")
-        )
-        menu.addItem(
-            NSMenuItem(title: "Settings", action: #selector(showSettings), keyEquivalent: ",")
         )
 
         menu.addItem(
@@ -68,22 +66,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenu()
     }
 
-    private func updateMenu() {
-        statusMenuItem.title = "Status: \(mainStatusTitle())"
-        setStatusIcon(statusIconName())
-        diagnosticsWindowController.update(puckStates: puckStates, controllerState: controllerState)
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        updateMenu()
     }
 
-    private func mainStatusTitle() -> String {
-        if controllerState.controller_is_connected {
-            return "Controller connected"
-        }
-
-        if !puckStates.isEmpty {
-            return puckStates.count == 1 ? "Puck connected, controller off" : "\(puckStates.count) pucks connected"
-        }
-
-        return "No puck detected"
+    private func updateMenu() {
+        statusMenuItem.title = "Status: \(statusMenuFormatter.title(puckStates: puckStates, controllerState: controllerState))"
+        setStatusIcon(statusIconName())
+        diagnosticsWindowController.update(puckStates: puckStates, controllerState: controllerState)
     }
 
     private func statusIconName() -> String {
@@ -137,12 +127,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         diagnosticsWindowController.update(puckStates: puckStates, controllerState: controllerState)
         diagnosticsWindowController.showWindow(nil)
         diagnosticsWindowController.window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    @objc private func showSettings() {
-        settingsWindowController.showWindow(nil)
-        settingsWindowController.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 

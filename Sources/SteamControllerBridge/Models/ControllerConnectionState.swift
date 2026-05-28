@@ -3,8 +3,12 @@ import Foundation
 struct ControllerConnectionState: Equatable {
     var devices: [SteamControllerDevice]
 
+    var connectedDevices: [SteamControllerDevice] {
+        devices.filter { $0.is_connected }
+    }
+
     var controller_is_connected: Bool {
-        devices.contains { $0.is_connected }
+        !connectedDevices.isEmpty
     }
 
     var controller_name: String? {
@@ -27,7 +31,12 @@ struct ControllerConnectionState: Equatable {
 struct SteamControllerDevice: Equatable {
     var device_id: String
     var name: String
+    var product_id: Int?
     var is_connected: Bool
     var last_input_at: Date?
+    var battery_level: Int?
+    var battery_voltage: Int?
+    var charge_state: Int?
+    var wireless_state: Int?
     var input_state: ControllerInputState
 }

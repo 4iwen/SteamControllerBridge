@@ -6,20 +6,17 @@ final class ControllerConnectionService {
     var onStateChange: ((ControllerConnectionState) -> Void)?
 
     private let valveVendorID = 0x28de
-    private let activeInputTimeout: TimeInterval = 3.0
+    private let puckProductIDs: Set<Int> = [0x1304, 0x1305, 0x1142]
 
     private var manager: IOHIDManager?
-    private var timer: Timer?
     private var devices: [UInt: SteamControllerDevice] = [:]
     private var reportBuffers: [UInt: UnsafeMutablePointer<UInt8>] = [:]
     private var reportBufferDeviceKeys: [UInt: UInt] = [:]
     private var state = ControllerConnectionState.notConnected
 
     deinit {
-        timer?.invalidate()
-
         if let manager {
-            IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+            IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
             IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         }
 
@@ -48,33 +45,41 @@ final class ControllerConnectionService {
         let context = Unmanaged.passUnretained(self).toOpaque()
         IOHIDManagerRegisterDeviceMatchingCallback(hidManager, steamControllerAddedCallback, context)
         IOHIDManagerRegisterDeviceRemovalCallback(hidManager, steamControllerRemovedCallback, context)
-        IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+        IOHIDManagerScheduleWithRunLoop(hidManager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
 
         let result = IOHIDManagerOpen(hidManager, IOOptionBits(kIOHIDOptionsTypeNone))
         if result != kIOReturnSuccess {
             print("IOHIDManagerOpen failed: \(String(format: "0x%08x", result))")
         }
 
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.publishIfChanged()
-        }
-        self.timer = timer
-        RunLoop.main.add(timer, forMode: .common)
-
+        addExistingDevices(from: hidManager)
         publishIfChanged()
     }
 
     fileprivate func add(device: IOHIDDevice) {
         let key = pointerKey(for: device)
-        devices[key] = SteamControllerDevice(
-            device_id: deviceID(for: device),
-            name: deviceTitle(device),
-            is_connected: false,
-            last_input_at: nil,
-            input_state: defaultInputState()
-        )
+        if devices[key] == nil {
+            devices[key] = SteamControllerDevice(
+                device_id: deviceID(for: device),
+                name: deviceTitle(device),
+                product_id: intProperty(device, key: kIOHIDProductIDKey),
+                is_connected: intProperty(device, key: kIOHIDProductIDKey).map { !puckProductIDs.contains($0) } ?? false,
+                last_input_at: nil,
+                battery_level: nil,
+                battery_voltage: nil,
+                charge_state: nil,
+                wireless_state: nil,
+                input_state: defaultInputState()
+            )
+        }
 
         if reportBuffers[key] == nil {
+            IOHIDDeviceScheduleWithRunLoop(device, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
+            let openResult = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
+            if openResult != kIOReturnSuccess {
+                print("IOHIDDeviceOpen failed: \(deviceTitle(device)) \(String(format: "0x%08x", openResult))")
+            }
+
             let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 64)
             buffer.initialize(repeating: 0, count: 64)
             reportBuffers[key] = buffer
@@ -91,9 +96,19 @@ final class ControllerConnectionService {
         publishIfChanged()
     }
 
+    private func addExistingDevices(from hidManager: IOHIDManager) {
+        guard let deviceSet = IOHIDManagerCopyDevices(hidManager) else { return }
+
+        for case let device as IOHIDDevice in deviceSet as Set<NSObject> {
+            add(device: device)
+        }
+    }
+
     fileprivate func remove(device: IOHIDDevice) {
         let key = pointerKey(for: device)
         devices.removeValue(forKey: key)
+        IOHIDDeviceUnscheduleFromRunLoop(device, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
+        IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeNone))
 
         if let buffer = reportBuffers.removeValue(forKey: key) {
             reportBufferDeviceKeys.removeValue(forKey: UInt(bitPattern: buffer))
@@ -193,8 +208,11 @@ final class ControllerConnectionService {
         guard offset + 2 <= length else { return }
 
         updateDevice(key) { device in
-            device.last_input_at = Date()
-            device.input_state.axes["battery_level"] = Int(report[offset + 1])
+            device.charge_state = Int(report[offset])
+            device.battery_level = Int(report[offset + 1])
+            device.battery_voltage = u16(report, offset + 2, length).map(Int.init)
+            device.input_state.axes["battery_level"] = device.battery_level ?? 0
+            device.input_state.axes["battery_voltage_mv"] = device.battery_voltage ?? 0
         }
     }
 
@@ -203,8 +221,15 @@ final class ControllerConnectionService {
 
         updateDevice(key) { device in
             device.last_input_at = Date()
-            device.is_connected = report[offset] == 2
-            device.input_state.buttons["wireless_connected"] = report[offset] == 2
+            let wirelessState = Int(report[offset])
+            device.wireless_state = wirelessState
+            if wirelessState == 1 {
+                device.is_connected = false
+            } else if wirelessState == 2 {
+                device.is_connected = true
+            }
+
+            device.input_state.buttons["wireless_connected"] = device.is_connected
         }
     }
 
@@ -216,15 +241,7 @@ final class ControllerConnectionService {
     }
 
     private func publishIfChanged() {
-        let now = Date()
-        let nextDevices = devices.values
-            .map { device -> SteamControllerDevice in
-                var next = device
-                if let lastInput = next.last_input_at, now.timeIntervalSince(lastInput) >= activeInputTimeout {
-                    next.is_connected = false
-                }
-                return next
-            }
+        let nextDevices = mergedControllerDevices(Array(devices.values))
             .sorted { left, right in
                 if left.is_connected != right.is_connected {
                     return left.is_connected
@@ -239,6 +256,123 @@ final class ControllerConnectionService {
         DispatchQueue.main.async { [state, onStateChange] in
             onStateChange?(state)
         }
+    }
+
+    private func mergedControllerDevices(_ physicalDevices: [SteamControllerDevice]) -> [SteamControllerDevice] {
+        var mergedDevices: [String: SteamControllerDevice] = [:]
+
+        for device in physicalDevices {
+            let key = mergeKey(for: device)
+            guard var existing = mergedDevices[key] else {
+                mergedDevices[key] = device
+                continue
+            }
+
+            existing = merge(existing, with: device)
+            mergedDevices[key] = existing
+        }
+
+        return Array(mergedDevices.values)
+    }
+
+    private func mergeKey(for device: SteamControllerDevice) -> String {
+        if device.device_id.hasPrefix("location-") {
+            return device.device_id
+        }
+
+        if let voltage = device.battery_voltage {
+            return "\(device.name)-battery-\(voltage)"
+        }
+
+        if let level = device.battery_level, device.charge_state != nil {
+            return "\(device.name)-battery-\(level)-charge"
+        }
+
+        return device.device_id
+    }
+
+    private func merge(_ left: SteamControllerDevice, with right: SteamControllerDevice) -> SteamControllerDevice {
+        var result = preferredDevice(left, right)
+        let fallback = result == left ? right : left
+
+        result.is_connected = left.is_connected || right.is_connected
+        result.last_input_at = latestDate(left.last_input_at, right.last_input_at)
+
+        let batterySource = preferredBatterySource(result, fallback)
+        result.battery_level = batterySource.battery_level
+        result.battery_voltage = batterySource.battery_voltage
+        result.charge_state = batterySource.charge_state
+        result.wireless_state = result.wireless_state ?? fallback.wireless_state
+        result.input_state = merge(result.input_state, with: fallback.input_state)
+
+        return result
+    }
+
+    private func preferredBatterySource(
+        _ left: SteamControllerDevice,
+        _ right: SteamControllerDevice
+    ) -> SteamControllerDevice {
+        if left.is_connected != right.is_connected {
+            return left.is_connected ? left : right
+        }
+
+        switch (left.last_input_at, right.last_input_at) {
+        case let (leftDate?, rightDate?):
+            return leftDate >= rightDate ? left : right
+        case (_?, nil):
+            return left
+        case (nil, _?):
+            return right
+        case (nil, nil):
+            if left.battery_level != nil || right.battery_level != nil {
+                return left.battery_level != nil ? left : right
+            }
+            return left
+        }
+    }
+
+    private func preferredDevice(_ left: SteamControllerDevice, _ right: SteamControllerDevice) -> SteamControllerDevice {
+        if left.is_connected != right.is_connected {
+            return left.is_connected ? left : right
+        }
+
+        switch (left.last_input_at, right.last_input_at) {
+        case let (leftDate?, rightDate?):
+            return leftDate >= rightDate ? left : right
+        case (_?, nil):
+            return left
+        case (nil, _?):
+            return right
+        case (nil, nil):
+            return left
+        }
+    }
+
+    private func latestDate(_ left: Date?, _ right: Date?) -> Date? {
+        switch (left, right) {
+        case let (leftDate?, rightDate?):
+            return max(leftDate, rightDate)
+        case let (leftDate?, nil):
+            return leftDate
+        case let (nil, rightDate?):
+            return rightDate
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private func merge(_ left: ControllerInputState, with right: ControllerInputState) -> ControllerInputState {
+        var axes = left.axes
+        for (key, value) in right.axes where axes[key] == nil || axes[key] == 0 {
+            axes[key] = value
+        }
+
+        var buttons = left.buttons
+        for (key, value) in right.buttons where buttons[key] != true {
+            buttons[key] = value
+        }
+
+        return ControllerInputState(axes: axes, buttons: buttons)
     }
 
     private func defaultInputState() -> ControllerInputState {
@@ -363,7 +497,8 @@ private let steamAxisNames = [
     "gyro_x",
     "gyro_y",
     "gyro_z",
-    "battery_level"
+    "battery_level",
+    "battery_voltage_mv"
 ]
 
 private let steamButtonNames = [

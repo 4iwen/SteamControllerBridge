@@ -65,6 +65,40 @@ struct DiagnosticsTextFormatter {
         return lines.joined(separator: "\n")
     }
 
+    func bridgeText(
+        controllerState: ControllerConnectionState,
+        bridgeStatus: LocalBridgeStatus,
+        installStatus: WineBridgeInstallStatus
+    ) -> String {
+        let xinputState = SteamToXInputMapper().map(
+            controllerState: controllerState,
+            packetNumber: bridgeStatus.lastState.packetNumber
+        )
+
+        var lines: [String] = []
+        lines.append("Local UDP Bridge")
+        lines.append("  Protocol: SCB1")
+        lines.append("  Address: 127.0.0.1:\(bridgeStatus.port)")
+        lines.append("  Packets sent: \(bridgeStatus.packetCount)")
+        lines.append("  Last send: \(lastSendTitle(bridgeStatus.lastSendAt))")
+        lines.append("  Status: \(bridgeStatus.lastError ?? "sending")")
+        lines.append("")
+
+        lines.append("Translated XInput")
+        appendXInputState(xinputState, to: &lines)
+        lines.append("")
+
+        lines.append("Last Sent Packet")
+        appendXInputState(bridgeStatus.lastState, to: &lines)
+        lines.append("")
+
+        lines.append("Wine Bridge Install")
+        lines.append("  Prefix: \(installStatus.selectedPrefixPath ?? "not selected")")
+        lines.append("  Status: \(installStatus.message)")
+
+        return lines.joined(separator: "\n")
+    }
+
     private func productIDTitle(for state: PuckState) -> String {
         guard let productID = state.product_id else { return "unknown" }
 
@@ -110,5 +144,21 @@ struct DiagnosticsTextFormatter {
         guard let date else { return "none" }
         let seconds = max(0, Date().timeIntervalSince(date))
         return String(format: "%.1fs ago", seconds)
+    }
+
+    private func lastSendTitle(_ date: Date?) -> String {
+        guard let date else { return "never" }
+        let seconds = max(0, Date().timeIntervalSince(date))
+        return String(format: "%.2fs ago", seconds)
+    }
+
+    private func appendXInputState(_ state: XInputControllerState, to lines: inout [String]) {
+        lines.append("  Connected: \(state.isConnected ? "yes" : "no")")
+        lines.append("  Packet: \(state.packetNumber)")
+        lines.append("  Buttons: \(String(format: "0x%04x", state.buttons))")
+        lines.append("  Triggers: L \(state.leftTrigger), R \(state.rightTrigger)")
+        lines.append("  Left thumb: \(state.leftThumbX), \(state.leftThumbY)")
+        lines.append("  Right thumb: \(state.rightThumbX), \(state.rightThumbY)")
+        lines.append("  Battery: \(state.batteryPercent)%, \(state.batteryVoltage) mV")
     }
 }

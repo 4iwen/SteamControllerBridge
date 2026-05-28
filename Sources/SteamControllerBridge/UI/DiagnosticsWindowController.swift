@@ -3,6 +3,7 @@ import AppKit
 final class DiagnosticsWindowController: NSWindowController {
     private let devicesView = NSTextView()
     private let inputView = NSTextView()
+    private let bridgeView = NSTextView()
     private let formatter = DiagnosticsTextFormatter()
 
     init() {
@@ -17,16 +18,31 @@ final class DiagnosticsWindowController: NSWindowController {
 
         super.init(window: window)
         window.contentView = makeContentView()
-        update(puckStates: [], controllerState: .notConnected)
+        update(
+            puckStates: [],
+            controllerState: .notConnected,
+            bridgeStatus: .initial,
+            installStatus: .initial
+        )
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func update(puckStates: [PuckState], controllerState: ControllerConnectionState) {
+    func update(
+        puckStates: [PuckState],
+        controllerState: ControllerConnectionState,
+        bridgeStatus: LocalBridgeStatus,
+        installStatus: WineBridgeInstallStatus
+    ) {
         devicesView.string = formatter.devicesText(puckStates: puckStates, controllerState: controllerState)
         inputView.string = formatter.inputText(controllerState: controllerState)
+        bridgeView.string = formatter.bridgeText(
+            controllerState: controllerState,
+            bridgeStatus: bridgeStatus,
+            installStatus: installStatus
+        )
     }
 
     private func makeContentView() -> NSView {
@@ -34,6 +50,7 @@ final class DiagnosticsWindowController: NSWindowController {
         tabView.translatesAutoresizingMaskIntoConstraints = false
         tabView.addTabViewItem(tab(title: "Devices", view: scrollView(for: devicesView)))
         tabView.addTabViewItem(tab(title: "Input", view: scrollView(for: inputView)))
+        tabView.addTabViewItem(tab(title: "Bridge", view: scrollView(for: bridgeView)))
 
         let container = NSView()
         container.addSubview(tabView)

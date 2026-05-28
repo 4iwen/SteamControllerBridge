@@ -5,9 +5,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private let puckDetectorService = PuckDetectorService()
     private let controllerConnectionService = ControllerConnectionService()
+    private let localBridgeServer = LocalBridgeServer()
+    private let wineBridgeInstaller = WineBridgeInstaller()
     private let statusMenuFormatter = StatusMenuFormatter()
     private var puckStates: [PuckState] = []
     private var controllerState = ControllerConnectionState.notConnected
+    private var bridgeStatus = LocalBridgeStatus.initial
+    private var installStatus = WineBridgeInstallStatus.initial
     private let diagnosticsWindowController = DiagnosticsWindowController()
 
     private let statusMenuItem = NSMenuItem(title: "Status: No puck detected", action: nil, keyEquivalent: "")
@@ -44,6 +48,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
 
         menu.addItem(
+            NSMenuItem(title: "Install Wine Bridge", action: #selector(installWineBridge), keyEquivalent: "")
+        )
+
+        menu.addItem(
             NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         )
 
@@ -58,9 +66,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         controllerConnectionService.onStateChange = { [weak self] state in
             self?.controllerState = state
+            self?.localBridgeServer.update(controllerState: state)
             self?.updateMenu()
         }
 
+        localBridgeServer.onStatusChange = { [weak self] status in
+            self?.bridgeStatus = status
+            self?.updateMenu()
+        }
+
+        localBridgeServer.start()
         puckDetectorService.start()
         controllerConnectionService.start()
         updateMenu()
@@ -73,7 +88,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateMenu() {
         statusMenuItem.title = "Status: \(statusMenuFormatter.title(puckStates: puckStates, controllerState: controllerState))"
         setStatusIcon(statusIconName())
-        diagnosticsWindowController.update(puckStates: puckStates, controllerState: controllerState)
+        diagnosticsWindowController.update(
+            puckStates: puckStates,
+            controllerState: controllerState,
+            bridgeStatus: bridgeStatus,
+            installStatus: installStatus
+        )
     }
 
     private func statusIconName() -> String {
@@ -124,10 +144,52 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func showDiagnostics() {
-        diagnosticsWindowController.update(puckStates: puckStates, controllerState: controllerState)
+        diagnosticsWindowController.update(
+            puckStates: puckStates,
+            controllerState: controllerState,
+            bridgeStatus: bridgeStatus,
+            installStatus: installStatus
+        )
         diagnosticsWindowController.showWindow(nil)
         diagnosticsWindowController.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func installWineBridge() {
+        let panel = NSOpenPanel()
+        panel.title = "Select Wine Prefix"
+        panel.message = "Select the Wine prefix that contains drive_c/windows/system32."
+        panel.prompt = "Install"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+
+        let result = panel.runModal()
+        guard result == .OK, let prefixURL = panel.url else {
+            return
+        }
+
+        do {
+            installStatus = try wineBridgeInstaller.install(into: prefixURL)
+            showInstallResult(title: "Wine Bridge Installed", message: installStatus.message)
+        } catch {
+            installStatus = WineBridgeInstallStatus(
+                selectedPrefixPath: prefixURL.path,
+                message: error.localizedDescription
+            )
+            showInstallResult(title: "Wine Bridge Install Failed", message: error.localizedDescription)
+        }
+
+        updateMenu()
+    }
+
+    private func showInstallResult(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = title.contains("Failed") ? .warning : .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc private func quit() {

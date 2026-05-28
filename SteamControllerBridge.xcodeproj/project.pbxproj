@@ -17,7 +17,13 @@
 		000000000000000000000108 /* ControllerInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000B /* ControllerInputState.swift */; };
 		000000000000000000000109 /* DiagnosticsTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000C /* DiagnosticsTextFormatter.swift */; };
 		00000000000000000000010B /* StatusMenuFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E /* StatusMenuFormatter.swift */; };
-		803E08432FC78701009D50B6 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 803E08422FC78701009D50B6 /* AppIcon.icon */; };
+		00000000000000000000010C /* XInputControllerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000F /* XInputControllerState.swift */; };
+		00000000000000000000010D /* SteamToXInputMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000010 /* SteamToXInputMapper.swift */; };
+		00000000000000000000010E /* SCB1PacketCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011 /* SCB1PacketCodec.swift */; };
+		00000000000000000000010F /* LocalBridgeServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012 /* LocalBridgeServer.swift */; };
+		000000000000000000000110 /* WineBridgeInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000013 /* WineBridgeInstaller.swift */; };
+		803E08462FC82CB8009D50B6 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 803E08452FC82CB8009D50B6 /* README.md */; };
+		803E08482FC82CB8009D50B6 /* WineBridge in Resources */ = {isa = PBXBuildFile; fileRef = 803E08472FC82CB8009D50B6 /* WineBridge */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,12 +33,19 @@
 		000000000000000000000004 /* PuckDetectorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuckDetectorService.swift; sourceTree = "<group>"; };
 		000000000000000000000005 /* ControllerConnectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerConnectionState.swift; sourceTree = "<group>"; };
 		000000000000000000000006 /* ControllerConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerConnectionService.swift; sourceTree = "<group>"; };
-		000000000000000000000009 /* SteamControllerBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SteamControllerBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000009 /* SteamControllerBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = SteamControllerBridge.app; path = /Users/lukas/Work/Coding/Swift/SteamControllerBridge/build/Debug/SteamControllerBridge.app; sourceTree = "<absolute>"; };
 		00000000000000000000000A /* DiagnosticsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsWindowController.swift; sourceTree = "<group>"; };
 		00000000000000000000000B /* ControllerInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerInputState.swift; sourceTree = "<group>"; };
 		00000000000000000000000C /* DiagnosticsTextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsTextFormatter.swift; sourceTree = "<group>"; };
 		00000000000000000000000E /* StatusMenuFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuFormatter.swift; sourceTree = "<group>"; };
+		00000000000000000000000F /* XInputControllerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XInputControllerState.swift; sourceTree = "<group>"; };
+		000000000000000000000010 /* SteamToXInputMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteamToXInputMapper.swift; sourceTree = "<group>"; };
+		000000000000000000000011 /* SCB1PacketCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCB1PacketCodec.swift; sourceTree = "<group>"; };
+		000000000000000000000012 /* LocalBridgeServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBridgeServer.swift; sourceTree = "<group>"; };
+		000000000000000000000013 /* WineBridgeInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WineBridgeInstaller.swift; sourceTree = "<group>"; };
 		803E08422FC78701009D50B6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		803E08452FC82CB8009D50B6 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		803E08472FC82CB8009D50B6 /* WineBridge */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sources/SteamControllerBridge/Resources/WineBridge; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,7 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				000000000000000000000302 /* Sources */,
-				000000000000000000000303 /* Products */,
+				803E08452FC82CB8009D50B6 /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,14 +75,6 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		000000000000000000000303 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				000000000000000000000009 /* SteamControllerBridge.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		000000000000000000000304 /* SteamControllerBridge */ = {
 			isa = PBXGroup;
 			children = (
@@ -78,6 +83,7 @@
 				000000000000000000000307 /* Services */,
 				000000000000000000000308 /* UI */,
 				803E08422FC78701009D50B6 /* AppIcon.icon */,
+				803E08472FC82CB8009D50B6 /* WineBridge */,
 			);
 			path = SteamControllerBridge;
 			sourceTree = "<group>";
@@ -97,6 +103,7 @@
 				000000000000000000000003 /* PuckState.swift */,
 				000000000000000000000005 /* ControllerConnectionState.swift */,
 				00000000000000000000000B /* ControllerInputState.swift */,
+				00000000000000000000000F /* XInputControllerState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -106,6 +113,10 @@
 			children = (
 				000000000000000000000004 /* PuckDetectorService.swift */,
 				000000000000000000000006 /* ControllerConnectionService.swift */,
+				000000000000000000000010 /* SteamToXInputMapper.swift */,
+				000000000000000000000011 /* SCB1PacketCodec.swift */,
+				000000000000000000000012 /* LocalBridgeServer.swift */,
+				000000000000000000000013 /* WineBridgeInstaller.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -130,6 +141,7 @@
 				000000000000000000000501 /* Sources */,
 				000000000000000000000201 /* Frameworks */,
 				000000000000000000000502 /* Resources */,
+				803E08492FC82CB8009D50B6 /* Build Wine XInput DLLs */,
 			);
 			buildRules = (
 			);
@@ -165,7 +177,7 @@
 			mainGroup = 000000000000000000000301;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 000000000000000000000303 /* Products */;
+			productRefGroup = 000000000000000000000301;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -179,11 +191,39 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				803E08432FC78701009D50B6 /* AppIcon.icon in Resources */,
+				803E08462FC82CB8009D50B6 /* README.md in Resources */,
+				803E08482FC82CB8009D50B6 /* WineBridge in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		803E08492FC82CB8009D50B6 /* Build Wine XInput DLLs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Sources/SteamControllerBridge/Resources/WineBridge/xinput_bridge.c",
+				"$(SRCROOT)/Sources/SteamControllerBridge/Resources/WineBridge/build-wine-bridge.sh",
+			);
+			name = "Build Wine XInput DLLs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/WineBridge/xinput1_3.dll",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/WineBridge/xinput1_4.dll",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/WineBridge/xinput9_1_0.dll",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nexport PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"\nbridge_src=\"$SRCROOT/Sources/SteamControllerBridge/Resources/WineBridge\"\nbridge_out=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/WineBridge\"\nmkdir -p \"$bridge_out\"\ncd \"$bridge_src\"\n./build-wine-bridge.sh \"$bridge_out\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000000000501 /* Sources */ = {
@@ -200,6 +240,11 @@
 				000000000000000000000108 /* ControllerInputState.swift in Sources */,
 				000000000000000000000109 /* DiagnosticsTextFormatter.swift in Sources */,
 				00000000000000000000010B /* StatusMenuFormatter.swift in Sources */,
+				00000000000000000000010C /* XInputControllerState.swift in Sources */,
+				00000000000000000000010D /* SteamToXInputMapper.swift in Sources */,
+				00000000000000000000010E /* SCB1PacketCodec.swift in Sources */,
+				00000000000000000000010F /* LocalBridgeServer.swift in Sources */,
+				000000000000000000000110 /* WineBridgeInstaller.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,8 +285,8 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -301,7 +346,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

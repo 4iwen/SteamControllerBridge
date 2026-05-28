@@ -13,7 +13,9 @@
 #include <string.h>
 
 #define SCB1_PORT 26760
+#define SCBR_PORT 26761
 #define SCB1_PACKET_BYTES 26
+#define SCBR_PACKET_BYTES 14
 #define BATTERY_DEVTYPE_GAMEPAD 0x00
 #define BATTERY_TYPE_DISCONNECTED 0x00
 #define BATTERY_TYPE_ALKALINE 0x02
@@ -23,6 +25,8 @@
 #define BATTERY_LEVEL_FULL 0x03
 #define XINPUT_GAMEPAD 0x01
 #define XINPUT_CAPS_WIRELESS 0x0002
+
+static const GUID SCB_NULL_GUID = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
 
 typedef struct {
     WORD wButtons;
@@ -56,6 +60,14 @@ typedef struct {
 } XINPUT_BATTERY_INFORMATION_LOCAL;
 
 typedef struct {
+    WORD VirtualKey;
+    WCHAR Unicode;
+    WORD Flags;
+    BYTE UserIndex;
+    BYTE HidCode;
+} XINPUT_KEYSTROKE_LOCAL;
+
+typedef struct {
     WORD wLeftMotorSpeed;
     WORD wRightMotorSpeed;
 } XINPUT_VIBRATION_LOCAL;
@@ -78,6 +90,8 @@ typedef struct {
 static SOCKET bridge_socket = INVALID_SOCKET;
 static BridgeState bridge_state;
 static int winsock_ready = 0;
+static int bind_attempted = 0;
+static DWORD rumble_packet = 1;
 
 static uint16_t read_u16(const unsigned char *data, int offset) {
     return (uint16_t)data[offset] | ((uint16_t)data[offset + 1] << 8);
@@ -94,10 +108,23 @@ static uint32_t read_u32(const unsigned char *data, int offset) {
         | ((uint32_t)data[offset + 3] << 24);
 }
 
+static void write_u16(unsigned char *data, int offset, uint16_t value) {
+    data[offset] = (unsigned char)(value & 0x00ff);
+    data[offset + 1] = (unsigned char)((value >> 8) & 0x00ff);
+}
+
+static void write_u32(unsigned char *data, int offset, uint32_t value) {
+    data[offset] = (unsigned char)(value & 0x000000ff);
+    data[offset + 1] = (unsigned char)((value >> 8) & 0x000000ff);
+    data[offset + 2] = (unsigned char)((value >> 16) & 0x000000ff);
+    data[offset + 3] = (unsigned char)((value >> 24) & 0x000000ff);
+}
+
 static void bridge_init(void) {
-    if (bridge_socket != INVALID_SOCKET) {
+    if (bridge_socket != INVALID_SOCKET || bind_attempted) {
         return;
     }
+    bind_attempted = 1;
 
     WSADATA data;
     if (WSAStartup(MAKEWORD(2, 2), &data) == 0) {
@@ -109,6 +136,9 @@ static void bridge_init(void) {
         return;
     }
 
+    BOOL reuse = TRUE;
+    setsockopt(bridge_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse));
+
     u_long nonblocking = 1;
     ioctlsocket(bridge_socket, FIONBIO, &nonblocking);
 
@@ -117,7 +147,10 @@ static void bridge_init(void) {
     address.sin_family = AF_INET;
     address.sin_port = htons(SCB1_PORT);
     address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    bind(bridge_socket, (struct sockaddr *)&address, sizeof(address));
+    if (bind(bridge_socket, (struct sockaddr *)&address, sizeof(address)) != 0) {
+        closesocket(bridge_socket);
+        bridge_socket = INVALID_SOCKET;
+    }
 }
 
 static void bridge_shutdown(void) {
@@ -199,13 +232,107 @@ DWORD WINAPI XInputGetCapabilities(DWORD dwUserIndex, DWORD dwFlags, XINPUT_CAPA
     pCapabilities->Type = XINPUT_GAMEPAD;
     pCapabilities->SubType = XINPUT_GAMEPAD;
     pCapabilities->Flags = XINPUT_CAPS_WIRELESS;
+    pCapabilities->Gamepad.wButtons = 0xffff;
+    pCapabilities->Gamepad.bLeftTrigger = 0xff;
+    pCapabilities->Gamepad.bRightTrigger = 0xff;
+    pCapabilities->Gamepad.sThumbLX = 0x7fff;
+    pCapabilities->Gamepad.sThumbLY = 0x7fff;
+    pCapabilities->Gamepad.sThumbRX = 0x7fff;
+    pCapabilities->Gamepad.sThumbRY = 0x7fff;
+    pCapabilities->Vibration.wLeftMotorSpeed = 0xffff;
+    pCapabilities->Vibration.wRightMotorSpeed = 0xffff;
     return ERROR_SUCCESS;
 }
 
+DWORD WINAPI XInputGetCapabilitiesEx(
+    DWORD reserved,
+    DWORD dwUserIndex,
+    DWORD dwFlags,
+    XINPUT_CAPABILITIES_LOCAL *pCapabilities
+) {
+    (void)reserved;
+    return XInputGetCapabilities(dwUserIndex, dwFlags, pCapabilities);
+}
+
 DWORD WINAPI XInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION_LOCAL *pVibration) {
-    (void)pVibration;
     bridge_poll();
-    return (dwUserIndex == 0 && bridge_state.connected) ? ERROR_SUCCESS : ERROR_DEVICE_NOT_CONNECTED;
+    if (dwUserIndex != 0 || !bridge_state.connected || pVibration == NULL) {
+        return ERROR_DEVICE_NOT_CONNECTED;
+    }
+
+    unsigned char data[SCBR_PACKET_BYTES];
+    data[0] = 'S';
+    data[1] = 'C';
+    data[2] = 'B';
+    data[3] = 'R';
+    data[4] = 1;
+    data[5] = (unsigned char)dwUserIndex;
+    write_u32(data, 6, rumble_packet++);
+    write_u16(data, 10, pVibration->wLeftMotorSpeed);
+    write_u16(data, 12, pVibration->wRightMotorSpeed);
+
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(SCBR_PORT);
+    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sendto(bridge_socket, (const char *)data, sizeof(data), 0, (struct sockaddr *)&address, sizeof(address));
+
+    return ERROR_SUCCESS;
+}
+
+DWORD WINAPI XInputGetDSoundAudioDeviceGuids(
+    DWORD dwUserIndex,
+    GUID *pDSoundRenderGuid,
+    GUID *pDSoundCaptureGuid
+) {
+    bridge_poll();
+
+    if (dwUserIndex != 0 || !bridge_state.connected) {
+        return ERROR_DEVICE_NOT_CONNECTED;
+    }
+
+    if (pDSoundRenderGuid != NULL) {
+        *pDSoundRenderGuid = SCB_NULL_GUID;
+    }
+
+    if (pDSoundCaptureGuid != NULL) {
+        *pDSoundCaptureGuid = SCB_NULL_GUID;
+    }
+
+    return ERROR_SUCCESS;
+}
+
+DWORD WINAPI XInputGetAudioDeviceIds(
+    DWORD dwUserIndex,
+    WCHAR *pRenderDeviceId,
+    UINT *pRenderCount,
+    WCHAR *pCaptureDeviceId,
+    UINT *pCaptureCount
+) {
+    bridge_poll();
+
+    if (dwUserIndex != 0 || !bridge_state.connected) {
+        return ERROR_DEVICE_NOT_CONNECTED;
+    }
+
+    if (pRenderCount != NULL) {
+        *pRenderCount = 0;
+    }
+
+    if (pCaptureCount != NULL) {
+        *pCaptureCount = 0;
+    }
+
+    if (pRenderDeviceId != NULL) {
+        pRenderDeviceId[0] = L'\0';
+    }
+
+    if (pCaptureDeviceId != NULL) {
+        pCaptureDeviceId[0] = L'\0';
+    }
+
+    return ERROR_SUCCESS;
 }
 
 void WINAPI XInputEnable(BOOL enable) {
@@ -237,20 +364,26 @@ DWORD WINAPI XInputGetBatteryInformation(
     return ERROR_SUCCESS;
 }
 
-DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, void *pKeystroke) {
+DWORD WINAPI XInputGetKeystroke(DWORD dwUserIndex, DWORD dwReserved, XINPUT_KEYSTROKE_LOCAL *pKeystroke) {
     (void)dwReserved;
-    (void)pKeystroke;
     bridge_poll();
-    return (dwUserIndex == 0 && bridge_state.connected) ? ERROR_EMPTY : ERROR_DEVICE_NOT_CONNECTED;
+
+    if (dwUserIndex != 0 || !bridge_state.connected) {
+        return ERROR_DEVICE_NOT_CONNECTED;
+    }
+
+    if (pKeystroke != NULL) {
+        memset(pKeystroke, 0, sizeof(*pKeystroke));
+    }
+
+    return ERROR_EMPTY;
 }
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved) {
     (void)instance;
     (void)reserved;
 
-    if (reason == DLL_PROCESS_ATTACH) {
-        bridge_init();
-    } else if (reason == DLL_PROCESS_DETACH) {
+    if (reason == DLL_PROCESS_DETACH) {
         bridge_shutdown();
     }
 

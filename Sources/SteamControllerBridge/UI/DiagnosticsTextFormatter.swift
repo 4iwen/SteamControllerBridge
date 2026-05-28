@@ -68,6 +68,7 @@ struct DiagnosticsTextFormatter {
     func bridgeText(
         controllerState: ControllerConnectionState,
         bridgeStatus: LocalBridgeStatus,
+        rumbleHIDStatus: RumbleHIDStatus,
         installStatus: WineBridgeInstallStatus
     ) -> String {
         let xinputState = SteamToXInputMapper().map(
@@ -81,6 +82,12 @@ struct DiagnosticsTextFormatter {
         lines.append("  Address: 127.0.0.1:\(bridgeStatus.port)")
         lines.append("  Packets sent: \(bridgeStatus.packetCount)")
         lines.append("  Last send: \(lastSendTitle(bridgeStatus.lastSendAt))")
+        lines.append("  Rumble listener: 127.0.0.1:\(bridgeStatus.rumblePort)")
+        lines.append("  Last rumble: \(rumbleTitle(bridgeStatus.lastRumble))")
+        lines.append("  Last HID rumble write: \(rumbleHIDTitle(rumbleHIDStatus))")
+        for message in rumbleHIDStatus.messages {
+            lines.append("    \(message)")
+        }
         lines.append("  Status: \(bridgeStatus.lastError ?? "sending")")
         lines.append("")
 
@@ -160,5 +167,17 @@ struct DiagnosticsTextFormatter {
         lines.append("  Left thumb: \(state.leftThumbX), \(state.leftThumbY)")
         lines.append("  Right thumb: \(state.rightThumbX), \(state.rightThumbY)")
         lines.append("  Battery: \(state.batteryPercent)%, \(state.batteryVoltage) mV")
+    }
+
+    private func rumbleTitle(_ command: RumbleCommand?) -> String {
+        guard let command else { return "none" }
+        let seconds = max(0, Date().timeIntervalSince(command.receivedAt))
+        return "packet \(command.packetNumber), L \(command.leftMotor), R \(command.rightMotor), \(String(format: "%.2fs ago", seconds))"
+    }
+
+    private func rumbleHIDTitle(_ status: RumbleHIDStatus) -> String {
+        guard let date = status.lastAttemptAt else { return "not sent" }
+        let seconds = max(0, Date().timeIntervalSince(date))
+        return "\(status.succeededDevices)/\(status.attemptedDevices) devices, \(String(format: "%.2fs ago", seconds))"
     }
 }

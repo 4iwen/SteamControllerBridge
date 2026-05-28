@@ -26,13 +26,21 @@ HID input for diagnostics.
 ## Install
 
 1. Run the app.
-4. Choose **Install Wine Bridge** from the menu bar item.
-5. Select the Wine prefix folder.
-6. The installer copies the DLLs into `drive_c/windows/system32/` and updates
-   `user.reg` so these DLL overrides are set to native, then builtin:
+2. Choose **Install Wine Bridge** from the menu bar item.
+3. Select the Wine prefix folder.
+4. The installer copies the 64-bit DLLs into `drive_c/windows/system32/` and
+   the 32-bit DLLs into `drive_c/windows/syswow64/` when that directory exists.
+5. It updates `user.reg` with global and Steam app-specific DLL overrides,
+   including both plain and starred Wine override names.
    
    ```text
+   xinput1_1=n,b
+   xinput1_2=n,b
    xinput1_3=n,b
    xinput1_4=n,b
    xinput9_1_0=n,b
+   xinputuap=n,b
    ```
+
+   Quit all Wine/Steam processes before installing, then relaunch Steam so Wine
+   reloads `user.reg`.

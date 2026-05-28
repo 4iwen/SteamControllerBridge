@@ -12,6 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controllerState = ControllerConnectionState.notConnected
     private var bridgeStatus = LocalBridgeStatus.initial
     private var installStatus = WineBridgeInstallStatus.initial
+    private var rumbleHIDStatus = RumbleHIDStatus.initial
     private let diagnosticsWindowController = DiagnosticsWindowController()
 
     private let statusMenuItem = NSMenuItem(title: "Status: No puck detected", action: nil, keyEquivalent: "")
@@ -70,9 +71,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.updateMenu()
         }
 
+        controllerConnectionService.onRumbleStatusChange = { [weak self] status in
+            self?.rumbleHIDStatus = status
+            self?.updateMenu()
+        }
+
         localBridgeServer.onStatusChange = { [weak self] status in
             self?.bridgeStatus = status
             self?.updateMenu()
+        }
+
+        localBridgeServer.onRumbleCommand = { [weak self] command in
+            self?.controllerConnectionService.apply(rumble: command)
         }
 
         localBridgeServer.start()
@@ -92,6 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             puckStates: puckStates,
             controllerState: controllerState,
             bridgeStatus: bridgeStatus,
+            rumbleHIDStatus: rumbleHIDStatus,
             installStatus: installStatus
         )
     }
@@ -148,6 +159,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             puckStates: puckStates,
             controllerState: controllerState,
             bridgeStatus: bridgeStatus,
+            rumbleHIDStatus: rumbleHIDStatus,
             installStatus: installStatus
         )
         diagnosticsWindowController.showWindow(nil)

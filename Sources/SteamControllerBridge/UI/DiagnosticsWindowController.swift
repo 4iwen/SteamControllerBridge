@@ -22,6 +22,7 @@ final class DiagnosticsWindowController: NSWindowController {
             puckStates: [],
             controllerState: .notConnected,
             bridgeStatus: .initial,
+            rumbleHIDStatus: .initial,
             installStatus: .initial
         )
     }
@@ -34,6 +35,7 @@ final class DiagnosticsWindowController: NSWindowController {
         puckStates: [PuckState],
         controllerState: ControllerConnectionState,
         bridgeStatus: LocalBridgeStatus,
+        rumbleHIDStatus: RumbleHIDStatus,
         installStatus: WineBridgeInstallStatus
     ) {
         devicesView.string = formatter.devicesText(puckStates: puckStates, controllerState: controllerState)
@@ -41,6 +43,7 @@ final class DiagnosticsWindowController: NSWindowController {
         bridgeView.string = formatter.bridgeText(
             controllerState: controllerState,
             bridgeStatus: bridgeStatus,
+            rumbleHIDStatus: rumbleHIDStatus,
             installStatus: installStatus
         )
     }

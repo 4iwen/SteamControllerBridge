@@ -1,0 +1,12 @@
+EXPORTS
+    XInputEnable
+    XInputGetAudioDeviceIds
+    XInputGetBatteryInformation
+    XInputGetCapabilities
+    XInputGetCapabilitiesEx
+    XInputGetDSoundAudioDeviceGuids
+    XInputGetKeystroke
+    XInputGetState
+    XInputGetStateEx=XInputGetState @100
+    XInputSetState
+

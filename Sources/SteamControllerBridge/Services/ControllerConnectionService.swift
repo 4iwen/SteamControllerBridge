@@ -2,23 +2,44 @@ import Foundation
 import IOKit
 import IOKit.hid
 
+struct RumbleHIDStatus: Equatable {
+    var lastAttemptAt: Date?
+    var attemptedDevices: Int
+    var succeededDevices: Int
+    var messages: [String]
+
+    static let initial = RumbleHIDStatus(
+        lastAttemptAt: nil,
+        attemptedDevices: 0,
+        succeededDevices: 0,
+        messages: ["not sent"]
+    )
+}
+
 final class ControllerConnectionService {
     var onStateChange: ((ControllerConnectionState) -> Void)?
+    var onRumbleStatusChange: ((RumbleHIDStatus) -> Void)?
 
     private let valveVendorID = 0x28de
     private let puckProductIDs: Set<Int> = [0x1304, 0x1305, 0x1142]
 
     private var manager: IOHIDManager?
     private var devices: [UInt: SteamControllerDevice] = [:]
+    private var hidDevices: [UInt: IOHIDDevice] = [:]
     private var reportBuffers: [UInt: UnsafeMutablePointer<UInt8>] = [:]
     private var reportBufferDeviceKeys: [UInt: UInt] = [:]
     private var state = ControllerConnectionState.notConnected
+    private var rumbleTimer: DispatchSourceTimer?
+    private var activeRumbleCommand: RumbleCommand?
+    private var lastRumbleHIDStatus = RumbleHIDStatus.initial
 
     deinit {
         if let manager {
             IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
             IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         }
+
+        rumbleTimer?.cancel()
 
         for buffer in reportBuffers.values {
             buffer.deallocate()
@@ -58,6 +79,7 @@ final class ControllerConnectionService {
 
     fileprivate func add(device: IOHIDDevice) {
         let key = pointerKey(for: device)
+        hidDevices[key] = device
         if devices[key] == nil {
             devices[key] = SteamControllerDevice(
                 device_id: deviceID(for: device),
@@ -107,6 +129,7 @@ final class ControllerConnectionService {
     fileprivate func remove(device: IOHIDDevice) {
         let key = pointerKey(for: device)
         devices.removeValue(forKey: key)
+        hidDevices.removeValue(forKey: key)
         IOHIDDeviceUnscheduleFromRunLoop(device, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
         IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeNone))
 
@@ -116,6 +139,24 @@ final class ControllerConnectionService {
         }
 
         publishIfChanged()
+    }
+
+    func apply(rumble command: RumbleCommand) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.apply(rumble: command)
+            }
+            return
+        }
+
+        activeRumbleCommand = command
+        sendRumble(command)
+
+        if command.leftMotor == 0 && command.rightMotor == 0 {
+            stopRumbleTimer()
+        } else {
+            startRumbleTimerIfNeeded()
+        }
     }
 
     fileprivate func update(reportID: UInt32, report: UnsafeMutablePointer<UInt8>, reportLength: CFIndex) {
@@ -256,6 +297,120 @@ final class ControllerConnectionService {
         DispatchQueue.main.async { [state, onStateChange] in
             onStateChange?(state)
         }
+    }
+
+    private func startRumbleTimerIfNeeded() {
+        guard rumbleTimer == nil else { return }
+
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + .milliseconds(40), repeating: .milliseconds(40))
+        timer.setEventHandler { [weak self] in
+            guard let self, let command = self.activeRumbleCommand else { return }
+            if Date().timeIntervalSince(command.receivedAt) > 1.0 {
+                self.sendRumble(leftMotor: 0, rightMotor: 0)
+                self.activeRumbleCommand = nil
+                self.stopRumbleTimer()
+                return
+            }
+            self.sendRumble(command)
+        }
+        timer.resume()
+        rumbleTimer = timer
+    }
+
+    private func stopRumbleTimer() {
+        rumbleTimer?.cancel()
+        rumbleTimer = nil
+    }
+
+    private func sendRumble(_ command: RumbleCommand) {
+        sendRumble(leftMotor: command.leftMotor, rightMotor: command.rightMotor)
+    }
+
+    private func sendRumble(leftMotor: UInt16, rightMotor: UInt16) {
+        var attemptedDevices = 0
+        var succeededDevices = 0
+        var messages: [String] = []
+
+        for (key, hidDevice) in hidDevices {
+            guard let device = devices[key] else { continue }
+            attemptedDevices += 1
+            let result = setTritonRumble(
+                hidDevice,
+                leftMotor: leftMotor,
+                rightMotor: rightMotor
+            )
+            if result.succeeded {
+                succeededDevices += 1
+            }
+            messages.append("\(device.name) \(hexTitle(device.product_id, width: 4)): \(result.message)")
+        }
+
+        if attemptedDevices == 0 {
+            messages.append("no Valve HID devices open")
+        }
+
+        lastRumbleHIDStatus = RumbleHIDStatus(
+            lastAttemptAt: Date(),
+            attemptedDevices: attemptedDevices,
+            succeededDevices: succeededDevices,
+            messages: messages
+        )
+        onRumbleStatusChange?(lastRumbleHIDStatus)
+    }
+
+    private func setTritonRumble(_ device: IOHIDDevice, leftMotor: UInt16, rightMotor: UInt16) -> (succeeded: Bool, message: String) {
+        var report: [UInt8] = [
+            0x80,
+            0x00,
+            0x00, 0x00,
+            UInt8(leftMotor & 0x00ff), UInt8((leftMotor >> 8) & 0x00ff),
+            0x00,
+            UInt8(rightMotor & 0x00ff), UInt8((rightMotor >> 8) & 0x00ff),
+            0x00
+        ]
+
+        let reportCount = report.count
+        let result = report.withUnsafeMutableBytes { rawBuffer in
+            guard let baseAddress = rawBuffer.bindMemory(to: UInt8.self).baseAddress else {
+                return kIOReturnBadArgument
+            }
+            return IOHIDDeviceSetReport(
+                device,
+                kIOHIDReportTypeOutput,
+                CFIndex(0x80),
+                baseAddress,
+                reportCount
+            )
+        }
+
+        if result == kIOReturnSuccess {
+            return (true, "sent report 0x80 len \(reportCount)")
+        }
+
+        let fallbackCount = report.count - 1
+        let fallbackResult = report.withUnsafeMutableBytes { rawBuffer in
+            guard let baseAddress = rawBuffer.bindMemory(to: UInt8.self).baseAddress else {
+                return kIOReturnBadArgument
+            }
+            let payloadAddress = baseAddress.advanced(by: 1)
+            return IOHIDDeviceSetReport(
+                device,
+                kIOHIDReportTypeOutput,
+                CFIndex(0x80),
+                payloadAddress,
+                fallbackCount
+            )
+        }
+
+        if fallbackResult == kIOReturnSuccess {
+            return (true, "sent fallback report 0x80 len \(fallbackCount)")
+        }
+
+        return (
+            false,
+            "failed report 0x80 len \(reportCount): \(ioReturnTitle(result)); fallback: \(ioReturnTitle(fallbackResult))"
+        )
     }
 
     private func mergedControllerDevices(_ physicalDevices: [SteamControllerDevice]) -> [SteamControllerDevice] {
@@ -433,6 +588,15 @@ final class ControllerConnectionService {
         }
 
         return value as? String
+    }
+
+    private func hexTitle(_ value: Int?, width: Int) -> String {
+        guard let value else { return "unknown" }
+        return String(format: "0x%0\(width)x", value)
+    }
+
+    private func ioReturnTitle(_ result: IOReturn) -> String {
+        String(format: "0x%08x", result)
     }
 
     private func u16(_ report: UnsafeMutablePointer<UInt8>, _ offset: Int, _ length: Int) -> UInt16? {
